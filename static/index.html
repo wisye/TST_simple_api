@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Encryption Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        textarea,
+        input {
+            width: 100%;
+            margin: 10px 0;
+            padding: 8px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Furina Encryption Service</h1>
+
+    <!-- API Key Management -->
+    <div class="container">
+        <h2>API Key Management</h2>
+        <div>
+            <input type="text" id="serviceName" placeholder="Service Name">
+            <input type="number" id="expiryDays" placeholder="Expiry Days" value="30">
+            <button onclick="createApiKey()">Create API Key</button>
+        </div>
+        <div class="result" id="apiKeyResult"></div>
+    </div>
+
+    <!-- Encryption -->
+    <div class="container">
+        <h2>Encrypt Text</h2>
+        <input type="text" id="apiKey" placeholder="API Key">
+        <textarea id="plaintext" rows="4" placeholder="Enter text to encrypt"></textarea>
+        <select id="sensitivity">
+            <option value="low">Low Security (ML-KEM-512)</option>
+            <option value="medium">Medium Security (Kyber768)</option>
+            <option value="high">High Security (ML-KEM-1024)</option>
+        </select>
+        <button onclick="encrypt()">Encrypt</button>
+        <div class="result" id="encryptResult"></div>
+    </div>
+
+    <!-- Decryption -->
+    <div class="container">
+        <h2>Decrypt Text</h2>
+        <input type="text" id="decryptApiKey" placeholder="API Key">
+        <input type="text" id="keyId" placeholder="Key ID">
+        <input type="text" id="cipherText" placeholder="Cipher Text">
+        <input type="text" id="iv" placeholder="IV">
+        <button onclick="decrypt()">Decrypt</button>
+        <div class="result" id="decryptResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        async function createApiKey() {
+            const serviceName = document.getElementById('serviceName').value;
+            const expiryDays = document.getElementById('expiryDays').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/keys`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        service_name: serviceName,
+                        expires_in_days: parseInt(expiryDays)
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('apiKeyResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('apiKeyResult').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function encrypt() {
+            const apiKey = document.getElementById('apiKey').value;
+            const text = document.getElementById('plaintext').value;
+            const sensitivity = document.getElementById('sensitivity').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/encrypt`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'furina-encryption-service': apiKey
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        sensitivity: sensitivity
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('encryptResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('encryptResult').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function decrypt() {
+            const apiKey = document.getElementById('decryptApiKey').value;
+            const keyId = document.getElementById('keyId').value;
+            const cipherText = document.getElementById('cipherText').value;
+            const iv = document.getElementById('iv').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/decrypt`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'furina-encryption-service': apiKey
+                    },
+                    body: JSON.stringify({
+                        key_id: keyId,
+                        cipher_text: cipherText,
+                        iv: iv
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('decryptResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('decryptResult').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+pydantic
 passlib
 python-multipart
 python-jose[cryptography]
